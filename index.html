@@ -757,7 +757,7 @@ function draw(scrollTo){
     /* Прокрутку делает внешняя страница — сообщаем ей, куда встать. */
     const off = anchor ? Math.max(0, anchor.getBoundingClientRect().top + window.scrollY - 8) : 0;
     postSize();
-    try{ window.parent.postMessage({ wwn:"scroll", offset:off }, "*"); }catch(e){}
+    try{ window.parent.postMessage({ cwn:"scroll", wwn:"scroll", offset:off }, "*"); }catch(e){}
     return;
   }
   if(anchor){ anchor.scrollIntoView({ block:"start", behavior:"instant" }); return; }
@@ -769,7 +769,7 @@ function draw(scrollTo){
 function postSize(){
   if(!EMBED) return;
   const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
-  try{ window.parent.postMessage({ wwn:"height", height:h }, "*"); }catch(e){}
+  try{ window.parent.postMessage({ cwn:"height", wwn:"height", height:h }, "*"); }catch(e){}
 }
 if(EMBED){
   window.addEventListener("load", postSize);
