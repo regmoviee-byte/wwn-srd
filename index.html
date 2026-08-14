@@ -768,7 +768,16 @@ function draw(scrollTo){
    вторая полоса прокрутки. */
 function postSize(){
   if(!EMBED) return;
-  const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+  const wrap = document.querySelector(".wrap");
+  const top = document.querySelector(".top");
+  let h = 0;
+  if(wrap && top){
+    /* высота шапки плюс высота содержимого: обе меряются по своим коробкам
+       и от размера рамки не зависят */
+    h = Math.ceil(top.getBoundingClientRect().height + wrap.getBoundingClientRect().height);
+  }
+  if(!h) h = Math.ceil(document.body.getBoundingClientRect().height);
+  if(!h) h = document.body.scrollHeight;
   try{ window.parent.postMessage({ cwn:"height", wwn:"height", height:h }, "*"); }catch(e){}
 }
 if(EMBED){
