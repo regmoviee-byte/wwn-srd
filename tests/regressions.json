@@ -1,0 +1,126 @@
+{
+  "repo": "wwn",
+  "rules_sha256": "6f86bb84d816c2205a26fc0bf40a03d6abf44a00521d6163ea18d8102e5983dc",
+  "cases": [
+    {
+      "id": "W01",
+      "language": "ru",
+      "source": "6.1.0",
+      "text": "Хитрость",
+      "target": "6.1.0",
+      "record_name": "Хитрость",
+      "old_def": "Всевидящие провидцы: В начале их хода каждый враждебный затаившийся Актив в пределах перемещения одного хода от Всевидящих провидцев должен преуспеть в проверке Хитрости против Хитрости против фракции-владельца — или потерять качество «Затаённый». Вдобавок все броски Хитрости, которые фракция делает за отряды и события в пределах перемещения одного хода от провидцев, получают дополнительную кость. Всё по плану: На фракцию работает некий гениально хитроумный вдохновитель. Всякий раз, когда Активы фракции делают бросок с участием Хитрости, они могут перебросить проваленную проверку ценой 1d6 урона Активу «Всё по плану». Так можно поступать многократно, хотя это может и уничтожить Актив. Дальность у этой выгоды не ограничена.",
+      "positive": false
+    },
+    {
+      "id": "W02",
+      "language": "ru",
+      "source": "6.1.0",
+      "text": "Мощь",
+      "target": "6.1.0",
+      "record_name": "Мощь",
+      "old_def": "Боевые машины: Под контролем фракции — подвижные боевые машины, которые движут обученные звери или магическая тяга. Военные дороги: Фракция проложила сеть дорог с тыловым складом в местоположении этого Актива. Благодаря этому раз за ход фракций фракция может переместить любой один Актив из любого местоположения в пределах досягаемости в любое другое местоположение в пределах досягаемости, заплатив 1 Казны.",
+      "positive": false
+    },
+    {
+      "id": "W03",
+      "language": "ru",
+      "source": "6.1.0",
+      "text": "Богатство",
+      "target": "6.1.0",
+      "record_name": "Богатство",
+      "old_def": "Безумный гений: Свободным действием раз за ход Безумный гений может переместиться. Свободным действием раз за ход Безумного гения можно принести в жертву, чтобы рейтинг Магии в его местоположении считался Высоким при покупке Активов, которым нужны такие ресурсы. Подспорье держится лишь до следующей покупки Актива в этом местоположении. Вольная рота: Наёмники и профессиональные солдаты; свободным действием раз за ход этот Актив может переместиться. В начале каждого хода владельца он требует 1 Казны на содержание. Если не заплатить, владелец бросает 1d6: на 1-3 Актив теряется, на 4-6 он выходит из повиновения и двинется Атаковать самую прибыльную с виду цель. Этот бросок повторяется каждый ход, пока долг не выплачен или Актив не потерян.",
+      "positive": false
+    },
+    {
+      "id": "W04",
+      "language": "en",
+      "source": "6.1.0",
+      "text": "Cunning",
+      "target": "6.1.0",
+      "record_name": "Cunning",
+      "old_def": "Bewitching Charmer: When the Bewitching Charmer succeeds in an Attack, the targeted Asset is unable to leave the same location as the Bewitching Charmer until the latter Asset moves or is destroyed. Bewitching Charmers are immune to Counterattack. Blackmail: When a Blackmail asset is in a location, hostile factions can’t roll more than one die during Attacks made by or against them there, even if they have tags or Assets that usually grant bonus dice.",
+      "positive": false
+    },
+    {
+      "id": "W05",
+      "language": "en",
+      "source": "6.1.0",
+      "text": "Force",
+      "target": "6.1.0",
+      "record_name": "Force",
+      "old_def": "Apocalypse Engine: One of a number of hideously powerful ancient super-weapons unearthed from some lost armory, an Apocalypse Engine rains some eldritch horror down on a targeted enemy Asset. Brilliant General: A leader for the ages is in service with the faction. Whenever the Brilliant General or any allied Force Asset in the same location Attacks or is made to defend, it can roll an extra die to do so.",
+      "positive": false
+    },
+    {
+      "id": "W06",
+      "language": "en",
+      "source": "6.1.0",
+      "text": "Wealth",
+      "target": "6.1.0",
+      "record_name": "Wealth",
+      "old_def": "Ancient Mechanisms: Some useful magical mechanism from ages past has been refitted to be useful in local industry. Whenever an Asset in the same location must roll to make a profit, such as Farmers or Manufactory, the faction may roll the die twice and take the better result. Ancient Workshop: A workshop has been refitted with ancient magical tools, allowing prodigies of production, albeit not always safely. As a free action, once per turn, the Ancient Workshop takes 1d6 damage and the owning faction gains 1d6 Treasure.",
+      "positive": false
+    },
+    {
+      "id": "W07",
+      "language": "en",
+      "source": "1.5.2.1",
+      "text": "On Turn",
+      "target": "2.4.3",
+      "record_name": "On Turn",
+      "old_def": "Sometimes it’s important to track the time of a more complex operation, like exploring a dungeon or navigating the trackless depths of some ancient ruin. In such cases, the turn is a common measure of time. Each turn lasts ten minutes and is equivalent to one scene for those situations when it matters.",
+      "positive": true
+    },
+    {
+      "id": "W08",
+      "language": "ru",
+      "source": "6.1.0",
+      "text": "Магия",
+      "target": "6.1.0",
+      "record_name": "Магия",
+      "old_def": "Колдовать и разбирать магию, знать о прославленных магах и громких магических событиях. Классам, не способным читать заклинания, этот навык даёт только теоретические знания.",
+      "positive": false
+    },
+    {
+      "id": "W09",
+      "language": "en",
+      "source": "6.1.0",
+      "text": "Magic",
+      "target": "6.1.0",
+      "record_name": "Magic",
+      "old_def": "Cast or analyze magic and know things about famous mages or notable magical events. Classes that can’t cast spells obtain only intellectual and scholarly benefits from this skill.",
+      "positive": false
+    },
+    {
+      "id": "W10",
+      "language": "ru",
+      "source": "3.2.3",
+      "text": "Богатый",
+      "target": null,
+      "record_name": null,
+      "old_def": "Фракция богата или наделена купеческой хваткой. Она бросает дополнительную кость во всех проверках атрибута Богатства. Богатство всегда должно оставаться её высшим атрибутом.",
+      "positive": false
+    },
+    {
+      "id": "W11",
+      "language": "ru",
+      "source": "4.6.0",
+      "text": "Рыцарь",
+      "target": null,
+      "record_name": null,
+      "old_def": "Фракция обучила или завербовала элитных воинов немалой личной удали — из сочувствующих дворян, ветеранов движения или сговорчивых наёмников.",
+      "positive": false
+    },
+    {
+      "id": "W12",
+      "language": "ru",
+      "source": "1.2.0",
+      "text": "см",
+      "target": null,
+      "record_name": null,
+      "old_def": "Игра исходит из того, что в обращении ходят медные, серебряные и золотые монеты: десять медных составляют серебряную, а десять серебряных — золотую. Базовая валюта — серебро; одна серебряная монета — обычный дневной заработок работника.",
+      "positive": false
+    }
+  ]
+}

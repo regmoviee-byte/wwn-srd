@@ -388,7 +388,7 @@ const CORE = {
     "Казнящая атака":"2.4.7.3","Боевой дух":"5.3.0","проверка реакции":"5.2.0",
     "Инстинкт":"5.4.0","Кости здоровья":"5.1.0","Пункты здоровья":"1.7.1",
     "Слава":"7.1.0","Великое начинание":"7.0.0","Творение":"4.8.0",
-    "Фракция":"6.1.0","Актив":"6.1.0","Хитрость":"6.8.0","Мощь":"6.9.0","Богатство":"6.10.0",
+    "Фракция":"6.0.0","Актив":"6.1.0","Хитрость":"6.1.0","Мощь":"6.1.0","Богатство":"6.1.0",
     "Ход фракций":"6.2.0","Черта":"6.5.0","Уровень жизни":"3.2.3",
     "Ход":"2.1.3","Сцена":"2.1.1","Раунд":"2.1.2" },
   en:{ "Class":"1.4.0","Focus":"1.6.0","Background":"1.3.0","Skill":"1.2.0",
@@ -401,7 +401,7 @@ const CORE = {
     "Execution Attack":"2.4.7.3","Morale":"5.3.0","Reaction Roll":"5.2.0",
     "Instinct":"5.4.0","Hit Dice":"5.1.0","Hit Points":"1.7.1",
     "Renown":"7.1.0","Major Project":"7.0.0","Working":"4.8.0",
-    "Faction":"6.1.0","Asset":"6.1.0","Cunning":"6.8.0","Force":"6.9.0","Wealth":"6.10.0",
+    "Faction":"6.0.0","Asset":"6.1.0","Cunning":"6.1.0","Force":"6.1.0","Wealth":"6.1.0",
     "Faction Turn":"6.2.0","Tag":"6.5.0","Lifestyle":"3.2.3",
     "Turn":"2.1.3","Scene":"2.1.1","Round":"2.1.2" }
 };
@@ -435,152 +435,183 @@ const ABBR = {
     "gp":["Gold piece","3.1.0"], "sp":["Silver piece","3.1.0"], "cp":["Copper piece","3.1.0"] }
 };
 
-let TERMS = new Map();   // ключ в нижнем регистре → {name, sec, def}
-function buildTerms(){
-  TERMS = new Map();
-  const abbrKeys = new Set(Object.keys(ABBR[lang]).map(x => x.toLowerCase()));
-  const add = (name, sec, def) => {
-    if(!name) return;
-    name = name.replace(/\s+/g, " ").trim();
-    const k = name.toLowerCase();
-    const isAbbr = abbrKeys.has(k);
-    if(TERMS.has(k)) return;
-    if(!isAbbr && (name.length < 3 || STOP.has(k))) return;
-    if(/^[0-9(]/.test(name)) return;
-    TERMS.set(k, { name, sec, def });
-  };
-  const reDefRu = /^\*\*([^*]{3,60}?):\*\*\s*(\S.{15,})$/;
-  const reDefEn = /^([A-Z][A-Za-z0-9’'&/,()– -]{2,58}):\s+(\S.{15,})$/;
-  const reHead  = /^#{3,6}\s+(\S.{2,58})$/;
+/* Термин хранит собственное определение; одноимённые значения не сливаются. */
+let TERMS = new Map(), TERM_NAMES = new Map();
+let TERM_RE = null, TERM_KEYS = [];
+const reEscape = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  for(const s of SECS){
-    const body = sBody(s); if(!body) continue;
-    const L = body.split("\n");
-    for(let i = 0; i < L.length; i++){
-      const tl = L[i].trim(); if(!tl) continue;
-      let m;
-      if((m = tl.match(reDefRu))){ add(m[1].trim(), s.n, m[2].trim()); continue; }
-      if((m = tl.match(reHead))){
-        const name = m[1].replace(/\*\*/g, "").trim();
-        const acc = [];
-        for(let j = i + 1; j < L.length && acc.length < 3; j++){
-          const nx = L[j].trim();
-          if(!nx) continue;
-          if(/^#{3,6}\s/.test(nx) || nx.startsWith("|")) break;
-          acc.push(nx.replace(/\*\*/g, "").replace(/^[-*]\s+/, ""));
-        }
-        if(acc.length) add(name, s.n, acc.join(" "));
-      }
-    }
+/* Ограниченные окончания сохраняют основу целиком. Сторож ≠ сторона,
+   Кибердек ≠ Кибердок, Скрыть ≠ скрытая. Сокращения не склоняются. */
+function wordForms(word){
+  const w = word.toLowerCase(), forms = new Set([w]);
+  const put = (base, endings) => endings.forEach(e => forms.add(base + e));
+  if(!/^[а-яё]+$/.test(w)){
+    if(/^[a-z]+$/.test(w) && w.length >= 5) put(w, ["s", "es"]);
+    return [...forms];
   }
-  /* базовые механические термины: описание — начало их собственного раздела */
-  for(const [name, sec] of Object.entries(CORE[lang])){
-    const s = byNum.get(sec) || byNum.get(pageFor(sec));
-    if(!s) continue;
-    let def = "";
-    const own = sBody(s);
-    if(own && own.trim()){
-      def = own.split("\n").map(x => x.trim())
-              .filter(x => x && !x.startsWith("|") && !/^#{3,6}\s/.test(x))
-              .slice(0, 2).join(" ");
-    }
-    if(!def){
-      for(const c of childrenOf(s.n)){
-        const cb = sBody(c);
-        if(cb && cb.trim()){
-          def = cb.split("\n").map(x => x.trim())
-                  .filter(x => x && !x.startsWith("|") && !/^#{3,6}\s/.test(x))
-                  .slice(0, 2).join(" ");
-          if(def) break;
-        }
-      }
-    }
-    const k = name.toLowerCase();
-    if(def) TERMS.set(k, { name, sec, def: def.replace(/\*\*/g, "") });
-  }
-  /* сокращения: подставляем полное название, определение берём из их раздела */
-  const opening = num => {
-    const s = byNum.get(num) || byNum.get(pageFor(num));
-    if(!s) return "";
-    const pick = sec => {
-      const b = sBody(sec);
-      if(!b || !b.trim()) return "";
-      return b.split("\n").map(x => x.trim())
-              .filter(x => x && !x.startsWith("|") && !/^#{1,6}\s/.test(x))
-              .slice(0, 2).join(" ").replace(/\*\*/g, "");
-    };
-    let d = pick(s);
-    if(!d) for(const c of childrenOf(s.n)){ d = pick(c); if(d) break; }
-    return d;
+  if(/(?:ть|ти)$/.test(w)) return [...forms];
+  if(/(?:ый|ой|ое|ая|ые)$/.test(w)) put(w.slice(0,-2), ["ый","ой","ое","ая","ую","ые","ого","ому","ым","ом","ых","ыми"]);
+  else if(/(?:ий|ее|яя|ие)$/.test(w)) put(w.slice(0,-2), ["ий","ее","яя","юю","ие","его","ему","им","ем","их","ими"]);
+  else if(w.endsWith("ость")) put(w.slice(0,-1), ["и","ью","ей","ям","ями","ях"]);
+  else if(w.endsWith("ия")) put(w.slice(0,-2), ["ии","ию","ией","ий","иям","иями","иях"]);
+  else if(w.endsWith("ие")) put(w.slice(0,-2), ["ия","ию","ием","ии","ий","иям","иями","иях"]);
+  else if(w.endsWith("о")) put(w.slice(0,-1), ["а","у","ом","е","","ам","ами","ах"]);
+  else if(w.endsWith("е")) put(w.slice(0,-1), ["я","ю","ем","и","ей","ям","ями","ях"]);
+  else if(w.endsWith("а")) put(w.slice(0,-1), [/[гкхжчшщ]а$/.test(w)?"и":"ы","е","у","ой","ою","ам","ами","ах"]);
+  else if(w.endsWith("я")) put(w.slice(0,-1), ["и","е","ю","ей","ям","ями","ях"]);
+  else if(w.endsWith("ь")) put(w.slice(0,-1), ["я","ю","ем","е","и","ей","ям","ями","ях"]);
+  else if(w.endsWith("й")) put(w.slice(0,-1), ["я","ю","ем","е","и","ев","ям","ями","ях"]);
+  else if(/[бвгджзклмнпрстфхцчшщ]$/.test(w)) put(w, ["а","у","ом","е",/[гкхжчшщ]$/.test(w)?"и":"ы","ов","ам","ами","ах"]);
+  if(w === "травмы") put("травм", ["","ы","ам","ами","ах"]);
+  if(w === "здоровья") put("здоровь", ["е","я","ю","ем"]);
+  if(w === "кости") put("кост", ["ей","ям","ями","ях"]);
+  return [...forms];
+}
+function termPattern(name, literal = false){
+  if(literal) return reEscape(name);
+  return name.split(/\s+/).map(w => "(?:" + wordForms(w).sort((a,b)=>b.length-a.length).map(reEscape).join("|") + ")").join("\\s+");
+}
+function definitionAt(sec, name, full = name){
+  const s = byNum.get(sec); if(!s) return "";
+  const lines = (sBody(s)||"").split("\n").map(x=>x.trim())
+    .filter(x=>x && !x.startsWith("|") && !/^#{1,6}\s/.test(x))
+    .map(x=>x.replace(/\*\*/g, "").replace(/^[-*•]\s+/, ""));
+  if(!lines.length) return "";
+  const pattern = "(?:" + termPattern(full) + "|" + reEscape(name) + ")";
+  const start = new RegExp("^" + pattern + "(?![\\p{L}\\p{N}])", "iu");
+  const anywhere = new RegExp("(?<![\\p{L}\\p{N}])" + pattern + "(?![\\p{L}\\p{N}])", "iu");
+  return lines.find(x=>start.test(x)) || lines.find(x=>anywhere.test(x)) || lines[0];
+}
+function buildTerms(){
+  TERMS = new Map(); TERM_NAMES = new Map();
+  const abbr = new Set(Object.keys(ABBR[lang]).map(x=>x.toLowerCase()));
+  const add = (name, sec, def, options = {}) => {
+    name = name.replace(/\s+/g," ").trim(); const key = name.toLowerCase();
+    if(!name || !byNum.has(sec) || !def || /^[0-9(]/.test(name)) return;
+    if(!abbr.has(key) && (name.length<3 || STOP.has(key))) return;
+    /* Краткие пометки снаряжения и способностей в статблоках — ссылки
+       на каноническую статью, а не новые определения термина. */
+    if(/^5\./.test(sec) && /\([^)]*(?:козырь|фокус|нерв|сенсорик|конечност|edge|focus|nerve|sensory|limb)/i.test(name)) return;
+    const records = TERM_NAMES.get(key)||[];
+    if(records.some(id=>TERMS.get(id).sec===sec)) return;
+    if(/^5\./.test(sec) && records.some(id=>!/^5\./.test(TERMS.get(id).sec))) return;
+    const id = records.length ? key + "@" + sec : key;
+    TERMS.set(id, {name,sec,def,...options}); records.push(id); TERM_NAMES.set(key,records);
   };
-  for(const [ab, [full, sec]] of Object.entries(ABBR[lang])){
-    const k = ab.toLowerCase();
-    const had = TERMS.get(k);
-    const def = (had && had.def) ? had.def : opening(sec);
-    if(!def) continue;
-    TERMS.set(k, { name:ab, full, sec:(had ? had.sec : sec), def });
+  const replace = (name,sec,full) => {
+    const key=name.toLowerCase(); for(const id of TERM_NAMES.get(key)||[]) TERMS.delete(id);
+    TERM_NAMES.delete(key);
+    add(name,sec,definitionAt(sec,name,full),full ? {full} : {});
+  };
+  for(const s of SECS){
+    const lines=(sBody(s)||"").split("\n");
+    for(let i=0;i<lines.length;i++){
+      const line=lines[i].trim();let m;
+      const def = lang==="ru" ? /^\*\*([^*]{3,60}?):\*\*\s*(\S.{15,})$/ : /^(?:\*\*)?([A-Z][A-Za-z0-9’'&/,()– -]{2,58}):(?:\*\*)?\s+(\S.{15,})$/;
+      if((m=line.match(def)) && (lang==="ru" || m[1].split(/\s+/).length<=6)){add(m[1],s.n,m[2]);continue;}
+      if((m=line.match(/^#{3,6}\s+(\S.{2,58})$/))){
+        const acc=[];
+        for(let j=i+1;j<lines.length && acc.length<3;j++){
+          const next=lines[j].trim();if(!next)continue;
+          if(/^#{1,6}\s/.test(next)||next.startsWith("|")||/^\*\*[^*]+:\*\*/.test(next))break;
+          acc.push(next.replace(/\*\*/g,"").replace(/^[-*]\s+/,""));
+        }
+        if(acc.length)add(m[1].replace(/\*\*/g,""),s.n,acc.join(" "));
+      }
+    }
   }
+  for(const [name,sec]of Object.entries(CORE[lang]))replace(name,sec);
+  for(const [name,[full,sec]]of Object.entries(ABBR[lang])){
+    /* Не заменяем отсутствующее определение вступлением к другой теме. */
+    if(name==="ПИ" || name==="NPC")continue;
+    replace(name,sec,full);
+  }
+  if(UI.ru.title==="Города без числа"){
+    if(lang==="en")replace("Skill","1.2.0");
+    const effort=lang==="ru"?"Усилие":"Effort";
+    add(effort,"6.2.1",definitionAt("6.2.1",effort));
+    const maintenance=lang==="ru"?"Обслуживание":"Maintenance";
+    add(maintenance,"3.6.4",definitionAt("3.6.4",maintenance));
+    const name=lang==="ru"?"Оснастка":"Fittings";
+    replace(name,"3.8.1");
+    add(name,"3.9.0",definitionAt("3.9.0",name));
+  }else{
+    const name=lang==="ru"?"Магия":"Magic";
+    add(name,"6.1.0",definitionAt("6.1.0",name));
+    /* Десятиминутный ход и действие в свой ход имеют разные статьи. */
+    if(lang==="en")add("On Turn","2.4.3",definitionAt("2.4.3","On Turn"));
+  }
+  if(lang==="ru")add("Действие в свой ход","2.4.3",definitionAt("2.4.3","Действие в свой ход"));
   buildTermRe();
 }
-
-let TERM_RE = null, TERM_KEYS = [];
-function stemPat(w){
-  const cyr = /[А-Яа-яЁё]/.test(w);
-  const e = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  if(cyr && w.length >= 6) return w.slice(0, w.length - 2).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "[а-яё]{0,3}";
-  if(!cyr && w.length >= 5) return e + "(?:s|es)?";
-  return e;
-}
 function buildTermRe(){
-  TERM_KEYS = [...TERMS.keys()].sort((a, b) => b.length - a.length);
-  const parts = TERM_KEYS.map(k => {
-    const words = TERMS.get(k).name.split(/\s+/).map(stemPat);
-    return "(" + words.join("\\s+") + ")";
+  TERM_KEYS=[...TERM_NAMES.keys()].sort((a,b)=>b.length-a.length);
+  const parts=TERM_KEYS.map(key=>{
+    const rec=TERMS.get(TERM_NAMES.get(key)[0]);
+    const literal=Object.keys(ABBR[lang]).some(x=>x.toLowerCase()===key);
+    const aliases=[termPattern(rec.name,literal)];
+    if(lang==="en" && key==="focus")aliases.push("foci");
+    if(lang==="en" && key==="trauma die")aliases.push("trauma\\s+dice");
+    return "("+aliases.join("|")+")";
   });
-  try{
-    TERM_RE = new RegExp("(?<![\\p{L}\\p{N}])(?:" + parts.join("|") + ")(?![\\p{L}\\p{N}])", "giu");
-  }catch(e){ TERM_RE = null; }
+  TERM_RE=parts.length ? new RegExp("(?<![\\p{L}\\p{N}])(?:"+parts.join("|")+")(?![\\p{L}\\p{N}])","giu") : null;
 }
-
-/* Обходим готовый DOM: так разметка гарантированно не ломается. */
+function resolveTerm(key, source, context, before, after){
+  let records=(TERM_NAMES.get(key)||[]).map(id=>({id,...TERMS.get(id)}));
+  const cities=UI.ru.title==="Города без числа";
+  if(cities && !/^(?:4\.|3\.7\.|5\.6\.)/.test(source) && !/кибер|хакер|cyber|hack|program\s+(?:Verb|Subject)|программн/i.test(context))records=records.filter(r=>!r.sec.startsWith("4."));
+  if(!cities && !source.startsWith("6.") && !/фракц|faction|\basset\b/i.test(context))records=records.filter(r=>!/^6\.(?:1|5|8|9|10)\./.test(r.sec));
+  if(!records.length)return null;
+  if(key==="маг")return null; // сокращение магазина используется в таблице оружия
+  if(["см","мм","зм","sp","gp","cp"].includes(key) && !/\d\s*$/.test(before))return null;
+  if(["богатая","wealthy"].includes(key) && !source.startsWith("6.5."))return null;
+  if(["рыцари","knights"].includes(key) && !source.startsWith("6."))return null;
+  let candidates=records;
+  if(["обслуживание","maintenance"].includes(key)){
+    const cyber=/кибер|cyber/i.test(context)||source.startsWith("3.6.");
+    const mods=/мод|\bmods?\b/i.test(context)||source.startsWith("2.8.");
+    if(!cyber && !mods)return null;
+    candidates=records.filter(r=>r.sec===(cyber?"3.6.4":"2.8.3"));
+  }
+  if(key==="program"){
+    const skill=/\/\s*$/.test(before) || /^\s+(?:skill|check)/i.test(after) || source.startsWith("1.");
+    candidates=records.filter(r=>skill ? r.sec==="1.2.3" : source.startsWith("4.") && r.sec==="4.3.3");
+  }
+  if(["индивидуальная подгонка","customized"].includes(key)){
+    if(/ствол|оружи|\bgun\b|\bweapon/i.test(context))candidates=records.filter(r=>r.sec==="3.4.5");
+    else if(/брон|\barmor/i.test(context))candidates=records.filter(r=>r.sec==="3.3.4");
+  }
+  if(["магия","magic"].includes(key) && records.some(r=>r.sec==="6.1.0"))candidates=records.filter(r=>source.startsWith("6.") ? r.sec==="6.1.0" : r.sec==="1.2.3");
+  if(candidates.length===1)return candidates[0];
+  /* Ближайший доказанный предметный раздел; при равенстве не гадаем. */
+  const score=r=>{const a=source.split("."),b=r.sec.split(".");let n=0;while(n<a.length&&a[n]===b[n])n++;return n;};
+  const ranked=candidates.map(r=>({...r,score:score(r)})).sort((a,b)=>b.score-a.score);
+  return ranked.length && ranked[0].score>0 && (ranked.length===1 || ranked[0].score>ranked[1].score) ? ranked[0] : null;
+}
 function linkTerms(root, homeNums){
-  if(!TERM_RE) return;
-  const nodes = [];
-  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let n;
-  while((n = w.nextNode())){
-    if(!n.nodeValue || n.nodeValue.length < 2) continue;
-    const p = n.parentElement;
-    /* Таблицы не размечаем: там те же термины стоят плотно и пунктир превращается в шум. */
-    if(!p || p.closest(".term,code,.raw,th,td,h1,h2,h3,.sh-alt,.alt-t,.toc,.sec-num,.sh-n")) continue;
-    nodes.push(n);
+  if(!TERM_RE)return;
+  const nodes=[],walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;
+  while(node=walker.nextNode()){
+    const p=node.parentElement;
+    if(node.nodeValue && p && !p.closest("a,.term,code,.raw,th,td,h1,h2,h3,h4,h5,h6,.sh-alt,.alt-t,.toc,.sec-num,.sh-n"))nodes.push(node);
   }
   for(const node of nodes){
-    const txt = node.nodeValue;
-    TERM_RE.lastIndex = 0;
-    let m, last = 0, frag = null;
-    while((m = TERM_RE.exec(txt))){
-      let gi = -1;
-      for(let i = 1; i < m.length; i++) if(m[i] !== undefined){ gi = i - 1; break; }
-      if(gi < 0) continue;
-      const key = TERM_KEYS[gi], rec = TERMS.get(key);
-      if(!rec || homeNums.has(rec.sec)) continue;
-      /* Игровые термины в переводе пишутся с заглавной — это отсекает
-         совпадения с обычными словами («Ловушка» ≠ «ловушки в полу»). */
-      const nameUp = rec.name[0] !== rec.name[0].toLowerCase();
-      if(nameUp && m[0][0] === m[0][0].toLowerCase()) continue;
-      frag = frag || document.createDocumentFragment();
-      if(m.index > last) frag.appendChild(document.createTextNode(txt.slice(last, m.index)));
-      const sp = document.createElement("span");
-      sp.className = "term"; sp.dataset.term = key; sp.tabIndex = 0;
-      sp.textContent = m[0];
-      frag.appendChild(sp);
-      last = m.index + m[0].length;
+    const text=node.nodeValue, parent=node.parentElement;
+    const source=parent.closest("section.sub")?.id.slice(4)||cur;
+    const context=parent.closest("p,li")?.textContent||parent.textContent;
+    TERM_RE.lastIndex=0;let m,last=0,frag=null;
+    while(m=TERM_RE.exec(text)){
+      const index=m.findIndex((x,i)=>i>0 && x!==undefined)-1;
+      if(index<0)continue;
+      const rec=resolveTerm(TERM_KEYS[index],source,context,text.slice(0,m.index),text.slice(m.index+m[0].length));
+      if(!rec || homeNums.has(rec.sec))continue;
+      if(rec.name[0]!==rec.name[0].toLowerCase() && m[0][0]===m[0][0].toLowerCase())continue;
+      if(!frag)frag=document.createDocumentFragment();
+      if(m.index>last)frag.appendChild(document.createTextNode(text.slice(last,m.index)));
+      const span=document.createElement("span");span.className="term";span.dataset.term=rec.id;span.tabIndex=0;span.setAttribute("role","link");span.textContent=m[0];frag.appendChild(span);
+      last=m.index+m[0].length;
     }
-    if(frag){
-      if(last < txt.length) frag.appendChild(document.createTextNode(txt.slice(last)));
-      node.parentNode.replaceChild(frag, node);
-    }
+    if(frag){if(last<text.length)frag.appendChild(document.createTextNode(text.slice(last)));node.parentNode.replaceChild(frag,node);}
   }
 }
 
@@ -624,6 +655,9 @@ document.addEventListener("mouseover", e => {
 });
 document.addEventListener("focusin", e => { const el = e.target.closest(".term"); if(el){ holdTip(); showTip(el); } });
 document.addEventListener("keydown", e => {
+  if((e.key === "Enter" || e.key === " ") && e.target.closest(".term")){
+    e.preventDefault(); e.target.closest(".term").click(); return;
+  }
   if(e.key !== "Escape") return;
   hideTip();
   const r = document.getElementById("rail");
@@ -802,7 +836,7 @@ function go(num){
 function setLang(l){
   if(l === lang) return;
   lang = l; localStorage.setItem("wwn-lang", l);
-  buildTerms(); draw();
+  buildTerms(); draw(fromHash());
 }
 document.getElementById("lRu").onclick = () => setLang("ru");
 document.getElementById("lEn").onclick = () => setLang("en");
